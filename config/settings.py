@@ -1,24 +1,21 @@
 """
 Django settings for the Restaurant Website + Management System.
-
-Dev setup uses SQLite (per project spec: 'SQLite can be used during
-initial development'). Swapping to PostgreSQL later is just a matter of
-changing the DATABASES dict below -- nothing else in the project needs
-to change.
 """
 
 import os
 from pathlib import Path
+from django.contrib.messages import constants as message_constants
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ------------------------------------------------------------------
 # SECURITY
 # ------------------------------------------------------------------
-SECRET_KEY = "django-insecure-dev-key-change-before-deployment"
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-key-change-before-deployment")
 
-DEBUG = True
-ALLOWED_HOSTS = ["*"]  # Vercel সহ সব হোস্ট এলাউ করার জন্য '*' রাখা হয়েছে
+DEBUG = os.environ.get("DEBUG", "True") == "True"
+
+ALLOWED_HOSTS = ["*"]
 
 # ------------------------------------------------------------------
 # APPLICATIONS
@@ -45,7 +42,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # Vercel-এ CSS/JS পাওয়ার জন্য WhiteNoise যোগ করা হলো
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -58,7 +55,7 @@ ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",  # <--- এখানে .django.DjangoTemplates যুক্ত করুন
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -78,8 +75,6 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ------------------------------------------------------------------
 # DATABASE
 # ------------------------------------------------------------------
-import os
-
 # DATABASES configuration for Vercel Serverless (SQLite inside /tmp)
 DATABASES = {
     'default': {
@@ -113,11 +108,15 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Vercel-এ Static files কমপ্রেসড করার জন্য WhiteNoise Storage
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
+
+# Vercel Serverless vs Local Environment dynamic configuration
+if os.environ.get('VERCEL') or os.environ.get('VERCEL_ENV'):
+    MEDIA_ROOT = os.path.join('/tmp', 'media')
+else:
+    MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -131,8 +130,6 @@ LOGOUT_REDIRECT_URL = "landing"
 # ------------------------------------------------------------------
 # MESSAGES
 # ------------------------------------------------------------------
-from django.contrib.messages import constants as message_constants  # noqa: E402
-
 MESSAGE_TAGS = {
     message_constants.ERROR: "danger",
 }
