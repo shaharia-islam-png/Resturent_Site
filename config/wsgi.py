@@ -5,9 +5,17 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 application = get_wsgi_application()
 
-# Vercel-এর /tmp/db.sqlite3 ফাঁকা থাকলে অটো মাইগ্রেশন রান করার জন্য:
+# Auto Migrate & Auto Create Superuser
 try:
     from django.core.management import call_command
+    from django.contrib.auth import get_user_model
+
+
     call_command('migrate', interactive=False)
+
+    User = get_user_model()
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser('admin', 'admin@example.com', 'admin1234')
+        print("Superuser created successfully!")
 except Exception as e:
-    print(f"Migration error: {e}")
+    print(f"Error during auto setup: {e}")
